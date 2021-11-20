@@ -12,7 +12,7 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(title: 'To-Do-List',  initialRoute: '/notif',
+    return MaterialApp(title: 'To-Do-List',  initialRoute: '/',
   routes: {
     '/': (context) => const TodoList(),
     '/create': (context) => const CreateTodo(),

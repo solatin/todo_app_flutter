@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:todos_app/data-access/todo_provider.dart';
 import 'package:todos_app/models/todo.dart';
 import 'dart:async';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -26,7 +27,7 @@ class TodoList extends StatefulWidget {
 }
 
 class _TodoListState extends State<TodoList> {
-  final List<Todo> _todoList = <Todo>[];
+  List<Todo> _todoList = <Todo>[];
   final List<String> listFilter = ['All', 'Today', 'Upcoming'];
   String activeFilter = 'All';
   String searchTerm = '';
@@ -37,6 +38,14 @@ class _TodoListState extends State<TodoList> {
   @override
   void initState() {
     super.initState();
+
+    final todoDAO = new TodoDAO();
+    todoDAO.getTodos().then((value) {
+      setState(() {
+        _todoList = value;
+        count = value.last.id + 1;
+      });
+    });
     flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
     var android = const AndroidInitializationSettings('@mipmap/ic_launcher');
     var iOS = const IOSInitializationSettings();
@@ -152,11 +161,13 @@ class _TodoListState extends State<TodoList> {
   }
 
   void _addTodoItem(Todo unIndexedTodo) {
-    Todo newTodo = Todo(count, unIndexedTodo.name, unIndexedTodo.time);
+    Todo newTodo = Todo(count, unIndexedTodo.name, unIndexedTodo.time, false);
     setState(() {
       _todoList.add(newTodo);
       count += 1;
     });
+    final todoDAO = new TodoDAO();
+    todoDAO.insert(newTodo);
     scheduleNotification(newTodo);
   }
 
@@ -164,7 +175,16 @@ class _TodoListState extends State<TodoList> {
     setState(() {
       _todoList.remove(todo);
     });
+    final todoDAO = new TodoDAO();
+    todoDAO.delete(todo.id);
     await flutterLocalNotificationsPlugin.cancel(todo.id);
+  }
+
+  void _checkDoneTodo(Todo todo) async {
+    todo.isDone = true;
+    final todoDAO = new TodoDAO();
+    todoDAO.update(todo);
+    setState(() {});
   }
 
   Widget _buildTodoItem(Todo todo) {
@@ -176,8 +196,7 @@ class _TodoListState extends State<TodoList> {
                 icon: Icon(Icons.check_box_sharp, color: Colors.black12))
             : IconButton(
                 onPressed: () {
-                  todo.isDone = true;
-                  setState(() {});
+                  _checkDoneTodo(todo);
                 },
                 icon: Icon(Icons.check_box_outline_blank_rounded)),
         subtitle: Text(DateFormat('yyyy-MM-dd – kk:mm').format(todo.time)),

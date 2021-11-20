@@ -3,9 +3,13 @@ class Todo {
   String name;
   DateTime time;
   bool isDone = false;
-  Todo(this.id, this.name, this.time);
+  Todo(this.id, this.name, this.time, this.isDone);
   @override
   String toString() {
-    return 'name: $name, time: $time';
+    return 'id: $id, name: $name, time: $time';
+  }
+
+  Map<String, dynamic> toMap() {
+    return {'todoID': id, 'name': name, 'time': time.toString(), 'isDone': isDone ? 1 : 0};
   }
 }
