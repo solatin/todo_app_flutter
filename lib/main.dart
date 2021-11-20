@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:todos_app/screens/create_todo.dart';
-import 'package:todos_app/screens/notif.dart';
 import 'package:todos_app/screens/todo_list.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 void main() async {
@@ -17,7 +16,6 @@ class App extends StatelessWidget {
   routes: {
     '/': (context) => const TodoList(),
     '/create': (context) => const CreateTodo(),
-    '/notif': (context) => Notif()
   },
   );
   }

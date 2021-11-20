@@ -84,7 +84,7 @@ class _CreateTodoState extends State<CreateTodo> {
                       child: Text('Submit'),
                       onPressed: () {
                         Navigator.pop(
-                            context, Todo(nameController.text, todoTime));
+                            context, Todo(-1, nameController.text, todoTime));
                       },
                     ),
                   )

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:todos_app/models/todo.dart';
-import 'package:todos_app/screens/notif.dart';
 import 'dart:async';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_native_timezone/flutter_native_timezone.dart';
@@ -22,7 +21,6 @@ extension DateOnlyCompare on DateTime {
 
 class TodoList extends StatefulWidget {
   const TodoList({Key? key}) : super(key: key);
-
   @override
   _TodoListState createState() => _TodoListState();
 }
@@ -32,6 +30,7 @@ class _TodoListState extends State<TodoList> {
   final List<String> listFilter = ['All', 'Today', 'Upcoming'];
   String activeFilter = 'All';
   String searchTerm = '';
+  int count = 0;
 
   late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
 
@@ -71,7 +70,6 @@ class _TodoListState extends State<TodoList> {
                   Container(
                     margin: const EdgeInsets.only(top: 10),
                     child: TextField(
-                      autofocus: true,
                       decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.search),
                           border: OutlineInputBorder(
@@ -101,7 +99,7 @@ class _TodoListState extends State<TodoList> {
                 ])));
   }
 
-  scheduleNotification(int index, Todo todo) async {
+  scheduleNotification(Todo todo) async {
     var android = const AndroidNotificationDetails('channel id', 'channel NAME',
         priority: Priority.high, importance: Importance.max);
     var iOS = const IOSNotificationDetails();
@@ -114,9 +112,9 @@ class _TodoListState extends State<TodoList> {
         todoTZTime.month,
         todoTZTime.day,
         todoTZTime.hour,
-        todoTZTime.minute -1);
-    await flutterLocalNotificationsPlugin.zonedSchedule(
-        index, 'Ongoing todo in 10 minutes', todo.name, scheduledDate, platform,
+        todoTZTime.minute - 10);
+    await flutterLocalNotificationsPlugin.zonedSchedule(todo.id,
+        'Ongoing todo in 10 minutes', todo.name, scheduledDate, platform,
         androidAllowWhileIdle: true,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
@@ -153,19 +151,47 @@ class _TodoListState extends State<TodoList> {
     return list;
   }
 
-  void _addTodoItem(Todo newTodo) {
+  void _addTodoItem(Todo unIndexedTodo) {
+    Todo newTodo = Todo(count, unIndexedTodo.name, unIndexedTodo.time);
     setState(() {
       _todoList.add(newTodo);
+      count += 1;
     });
-    scheduleNotification(_todoList.length, newTodo);
+    scheduleNotification(newTodo);
+  }
+
+  void _removeTodoItem(Todo todo) async {
+    setState(() {
+      _todoList.remove(todo);
+    });
+    await flutterLocalNotificationsPlugin.cancel(todo.id);
   }
 
   Widget _buildTodoItem(Todo todo) {
     return ListTile(
-      title: Text('${todo.name}'),
-      leading: Icon(Icons.soap),
-      subtitle: Text(DateFormat('yyyy-MM-dd – kk:mm').format(todo.time)),
-    );
+        title: Text('${todo.name}'),
+        leading: todo.isDone
+            ? IconButton(
+                onPressed: () {},
+                icon: Icon(Icons.check_box_sharp, color: Colors.black12))
+            : IconButton(
+                onPressed: () {
+                  todo.isDone = true;
+                  setState(() {});
+                },
+                icon: Icon(Icons.check_box_outline_blank_rounded)),
+        subtitle: Text(DateFormat('yyyy-MM-dd – kk:mm').format(todo.time)),
+        enabled: !todo.isDone,
+        trailing: todo.isDone
+            ? TextButton(
+                onPressed: () {
+                  _removeTodoItem(todo);
+                },
+                child: const Text(
+                  'Remove',
+                  style: TextStyle(color: Colors.red),
+                ))
+            : null);
   }
 
   List<Widget> _getItems() {
